@@ -1,0 +1,3 @@
+[submodule "pipeframe"]
+	path = pipeframe
+	url = https://github.com/booleancoercion/pipeframe
