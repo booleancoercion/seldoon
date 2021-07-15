@@ -2,10 +2,11 @@ use seldoon::draw::{self, Line};
 use seldoon::grid::Grid;
 use seldoon::vec2::Vec2;
 
+use pipeframe::pixels::Rgb;
 use pipeframe::Video;
 
 fn main() {
-    let mut video = Video::new((1024, 1024), 60, "output");
+    let mut video: Video<Rgb> = Video::new((1024, 1024), 60, "output");
 
     let (x, y) = video.get_resolution();
     let grid = Grid::new((x, y), -6.1..=6.1, -6.1..=6.1);
@@ -23,8 +24,16 @@ fn main() {
         *pt = rewind(*pt, &grid);
     }
 
-    for _ in 1..=20 * 60 {
+    for i in 0..20 * 60 {
         let frame = video.get_frame_mut();
+
+        if i % 2 == 0 {
+            for px in 0..x {
+                for py in 0..y {
+                    frame[(px, py)].vals[0] = frame[(px, py)].vals[0].saturating_sub(1);
+                }
+            }
+        }
 
         for pt in &mut points {
             let prev = *pt;
