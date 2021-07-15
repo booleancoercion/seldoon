@@ -13,6 +13,7 @@ pub struct Grid {
 }
 
 impl Grid {
+    /// Creates a new Grid instance using a given output resolution and desired x/y bounds.
     pub fn new(
         resolution: (usize, usize),
         xrange: RangeInclusive<f64>,
@@ -73,6 +74,9 @@ impl Grid {
         }
     }
 
+    /// Converts coordinates on the grid to the rounded coordinates of a pixel on the scren,
+    /// clamping the pixel so that it will fit on the screen no matter what.  
+    /// Useful for bounds.
     pub fn get_clamped_pixel(&self, p: Vec2) -> (usize, usize) {
         let p = self.get_pixel(p);
 
@@ -100,15 +104,63 @@ impl Grid {
         Vec2(xpix as f64 + 0.5, ypix as f64 + 0.5)
     }
 
+    /// Getter for the stored output resolution.
     pub fn get_res(&self) -> (usize, usize) {
         self.resolution
     }
 
-    pub fn get_units(&self) -> (f64, f64) {
-        (self.unit_x, self.unit_y)
-    }
-
+    /// Getter for the x/y ranges that this Grid was initialized with.
     pub fn get_ranges(&self) -> (RangeInclusive<f64>, RangeInclusive<f64>) {
         (self.xrange.clone(), self.yrange.clone())
+    }
+
+    /// "Inflates" a given bounding box in the pixel space by the given amount of pixels,
+    /// while clamping it to fit in the screen.
+    pub fn inflate_bounding_box(
+        &self,
+        xrange: RangeInclusive<usize>,
+        yrange: RangeInclusive<usize>,
+        param: usize,
+    ) -> (RangeInclusive<usize>, RangeInclusive<usize>) {
+        let (xmin, xmax) = xrange.into_inner();
+        let (ymin, ymax) = yrange.into_inner();
+
+        let xmin = xmin.saturating_sub(param);
+        let xmax = xmax.saturating_add(param).min(self.resolution.0 - 1);
+
+        let ymin = ymin.saturating_sub(param);
+        let ymax = ymax.saturating_add(param).min(self.resolution.1 - 1);
+
+        (xmin..=xmax, ymin..=ymax)
+    }
+
+    /// Checks if a given point in coordinate space is inside of the grid.
+    pub fn contains(&self, pt: Vec2) -> bool {
+        let Vec2(x, y) = pt;
+        self.xrange.contains(&x) && self.yrange.contains(&y)
+    }
+
+    pub fn border_points(&self, border_dist: f64, points_per_border: u32) -> Vec<Vec2> {
+        let (xmin, xmax) = self.xrange.clone().into_inner();
+        let (ymin, ymax) = self.yrange.clone().into_inner();
+        let (xmin, xmax) = (xmin + border_dist, xmax - border_dist);
+        let (ymin, ymax) = (ymin + border_dist, ymax - border_dist);
+
+        assert!(xmin < xmax);
+        assert!(ymin < ymax);
+
+        let xdist = (xmax - xmin) / points_per_border as f64;
+        let ydist = (ymax - ymin) / points_per_border as f64;
+
+        let mut v = vec![];
+        for i in 0..points_per_border {
+            let i = i as f64;
+            v.push(Vec2(xmin + i * xdist, ymin));
+            v.push(Vec2(xmin + i * xdist, ymax));
+            v.push(Vec2(xmin, ymin + i * ydist));
+            v.push(Vec2(xmax, ymin + i * ydist));
+        }
+
+        v
     }
 }

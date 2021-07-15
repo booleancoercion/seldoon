@@ -4,16 +4,16 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 pub struct Vec2(pub f64, pub f64);
 
 impl Vec2 {
-    pub fn dot(&self, other: &Self) -> f64 {
+    pub fn dot(self, other: Self) -> f64 {
         self.0 * other.0 + self.1 * other.1
     }
 
-    pub fn norm(&self) -> f64 {
+    pub fn norm(self) -> f64 {
         self.dot(self).sqrt()
     }
 
-    pub fn dist(&self, other: &Self) -> f64 {
-        let diff = *self - *other;
+    pub fn dist(self, other: Self) -> f64 {
+        let diff = self - other;
         diff.norm()
     }
 

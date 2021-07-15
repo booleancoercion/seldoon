@@ -17,39 +17,35 @@ pub trait Drawable {
 }
 
 pub fn draw<D: Drawable>(object: &D, grid: &Grid, frame: &mut Frame<Rgb>) {
-    let (xres, yres) = grid.get_res();
     let (xrange, yrange) = object.bounding_box();
+    let (xrange, yrange) = grid.inflate_bounding_box(xrange, yrange, 2);
 
-    let (xmin, xmax) = xrange.into_inner();
-    let (ymin, ymax) = yrange.into_inner();
-
-    let xmin = xmin.saturating_sub(3);
-    let xmax = xmax.saturating_add(3).min(xres - 1);
-
-    let ymin = ymin.saturating_sub(3);
-    let ymax = ymax.saturating_add(3).min(yres - 1);
-
-    for px in xmin..=xmax {
-        for py in ymin..=ymax {
+    for px in xrange {
+        for py in yrange.clone() {
             let p = grid.centered_pixel(px, py);
             let dist = object.pixel_dist(p);
 
-            let red = if dist < 1. {
-                255
-            } else if frame[(px, py)].vals != [0, 0, 0] {
+            let alpha = get_alpha(dist, 1., 1.);
+            if alpha < 1.0 && frame[(px, py)].vals != [0, 0, 0] {
                 continue;
-            } else {
-                let alpha = (2. - dist).max(0.);
+            }
 
-                (255. * alpha) as u8
-            };
+            let red = (255. * alpha) as u8;
 
             frame[(px, py)] = Rgb::from_bytes([red, 0, 0]);
         }
     }
 }
 
-pub fn rangify(a: usize, b: usize) -> RangeInclusive<usize> {
+fn get_alpha(dist: f64, inside_pixels: f64, falloff_length: f64) -> f64 {
+    if dist < inside_pixels {
+        1.0
+    } else {
+        (1.0 - (dist - inside_pixels) / falloff_length).max(0.)
+    }
+}
+
+fn rangify(a: usize, b: usize) -> RangeInclusive<usize> {
     if a <= b {
         a..=b
     } else {
@@ -105,7 +101,7 @@ impl Line {
 
 impl Drawable for Line {
     fn pixel_dist(&self, p: Vec2) -> f64 {
-        self.closest(p).dist(&p)
+        self.closest(p).dist(p)
     }
 
     fn bounding_box(&self) -> (RangeInclusive<usize>, RangeInclusive<usize>) {
