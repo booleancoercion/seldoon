@@ -1,6 +1,8 @@
 pub mod draw;
-pub mod grid;
-pub mod vec2;
+mod grid;
+mod vec2;
+mod vector_field;
 
-use grid::Grid;
-use vec2::Vec2;
+pub use grid::Grid;
+pub use vec2::Vec2;
+pub use vector_field::VField;
